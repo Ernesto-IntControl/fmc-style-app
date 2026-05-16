@@ -73,4 +73,34 @@ const rendezVousEmploye = async (req, res, next) => {
   }
 };
 
-module.exports = { listerEmployes, creerEmploye, modifierEmploye, supprimerEmploye, rendezVousEmploye };
+const rendezVousEmployeConnecte = async (req, res, next) => {
+  try {
+    const employe = await Employe.findOne({ where: { utilisateurId: req.utilisateur.id } });
+    if (!employe) {
+      res.status(404);
+      throw new Error("Fiche employe introuvable");
+    }
+
+    const rendezVous = await RendezVous.findAll({
+      where: { employeId: employe.id },
+      include: [
+        { model: Utilisateur, as: "client", attributes: ["id", "nom", "email", "telephone"] },
+        { model: Service, as: "service", attributes: ["id", "nom", "prix", "duree"] },
+      ],
+      order: [["date", "ASC"], ["heure", "ASC"]],
+    });
+
+    res.json(rendezVous);
+  } catch (erreur) {
+    next(erreur);
+  }
+};
+
+module.exports = {
+  listerEmployes,
+  creerEmploye,
+  modifierEmploye,
+  supprimerEmploye,
+  rendezVousEmploye,
+  rendezVousEmployeConnecte,
+};

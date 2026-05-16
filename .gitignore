@@ -5,3 +5,5 @@ uploads/*
 *.log
 dist/
 build/
+backend/.postman/
+backend/postman/
