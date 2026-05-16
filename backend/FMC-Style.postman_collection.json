@@ -1,0 +1,177 @@
+{
+  "info": {
+    "name": "FMC Style Backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:5000" },
+    { "key": "token_client", "value": "" },
+    { "key": "token_admin", "value": "" },
+    { "key": "service_id", "value": "1" },
+    { "key": "rendez_vous_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Sante API",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/sante"
+      }
+    },
+    {
+      "name": "Auth - Login client",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.jeton) pm.collectionVariables.set('token_client', json.jeton);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"client@fmc-style.test\",\n  \"motDePasse\": \"password\"\n}"
+        },
+        "url": "{{base_url}}/api/auth/login"
+      }
+    },
+    {
+      "name": "Auth - Login admin",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.jeton) pm.collectionVariables.set('token_admin', json.jeton);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@fmc-style.test\",\n  \"motDePasse\": \"password\"\n}"
+        },
+        "url": "{{base_url}}/api/auth/login"
+      }
+    },
+    {
+      "name": "Auth - Profil client",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token_client}}" }],
+        "url": "{{base_url}}/api/auth/me"
+      }
+    },
+    {
+      "name": "Services - Liste",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "if (Array.isArray(json) && json[0]) pm.collectionVariables.set('service_id', json[0].id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/services"
+      }
+    },
+    {
+      "name": "Disponibilites",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/availability?date=2026-05-20&serviceId={{service_id}}"
+      }
+    },
+    {
+      "name": "Chat - Demande simple",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token_client}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"Je veux faire des tresses demain à 09h\"\n}"
+        },
+        "url": "{{base_url}}/api/chat"
+      }
+    },
+    {
+      "name": "Rendez-vous - Creer",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "if (json.id) pm.collectionVariables.set('rendez_vous_id', json.id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token_client}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"serviceId\": {{service_id}},\n  \"date\": \"2026-05-20\",\n  \"heure\": \"09:00\",\n  \"notes\": \"Je veux un style simple et elegant.\",\n  \"imagesInspiration\": []\n}"
+        },
+        "url": "{{base_url}}/api/appointments"
+      }
+    },
+    {
+      "name": "Rendez-vous - Mes rendez-vous",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token_client}}" }],
+        "url": "{{base_url}}/api/appointments/my"
+      }
+    },
+    {
+      "name": "Paiement - Simulation",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token_client}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"rendezVousId\": {{rendez_vous_id}},\n  \"remiseAppliquee\": 0,\n  \"methode\": \"simulation\"\n}"
+        },
+        "url": "{{base_url}}/api/payments"
+      }
+    },
+    {
+      "name": "Admin - Tous les rendez-vous",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token_admin}}" }],
+        "url": "{{base_url}}/api/appointments"
+      }
+    }
+  ]
+}
