@@ -34,6 +34,17 @@ Comptes crees :
 - Admin : `admin@fmc-style.test` / `password`
 - Client : `client@fmc-style.test` / `password`
 
+## Assistant virtuel OpenAI
+
+Ajouter votre cle dans `.env` :
+
+```env
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4.1-mini
+```
+
+La route `POST /api/chat` utilise la Responses API avec une sortie JSON stricte. Si la cle OpenAI est absente ou si l'appel echoue, le backend utilise automatiquement une logique simple par regles pour garder la demonstration fonctionnelle.
+
 ## Tables principales
 
 - `utilisateurs`
