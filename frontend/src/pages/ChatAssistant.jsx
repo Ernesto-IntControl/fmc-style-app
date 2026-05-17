@@ -6,25 +6,35 @@ function ChatAssistant({ setPage }) {
   const [messages, setMessages] = useState([
     { role: "assistant", texte: "Bonjour, je suis votre conciergerie FMC Style. Comment puis-je vous sublimer aujourd'hui ?" },
   ]);
+  const [suggestions, setSuggestions] = useState([
+    "Bonjour, quels services proposez-vous ?",
+    "Je ne sais pas quel soin choisir",
+    "Je veux faire des tresses demain",
+  ]);
   const [chargement, setChargement] = useState(false);
 
-  const envoyer = async (event) => {
-    event.preventDefault();
-    if (!message.trim()) return;
+  const envoyerMessage = async (texte) => {
+    if (!texte.trim()) return;
 
-    const texte = message.trim();
     setMessage("");
+    setSuggestions([]);
     setMessages((actuels) => [...actuels, { role: "user", texte }]);
     setChargement(true);
 
     try {
       const reponse = await sendChatMessage(texte);
       setMessages((actuels) => [...actuels, { role: "assistant", texte: reponse.reponse }]);
+      setSuggestions(reponse.donneesStructurees?.suggestions || []);
     } catch (error) {
       setMessages((actuels) => [...actuels, { role: "assistant", texte: error.message }]);
     } finally {
       setChargement(false);
     }
+  };
+
+  const envoyer = async (event) => {
+    event.preventDefault();
+    await envoyerMessage(message.trim());
   };
 
   return (
@@ -53,6 +63,15 @@ function ChatAssistant({ setPage }) {
           ))}
           {chargement && <div className="message">Aura prepare sa reponse...</div>}
         </div>
+        {suggestions.length > 0 && (
+          <div className="chat-suggestions">
+            {suggestions.slice(0, 3).map((suggestion) => (
+              <button key={suggestion} type="button" onClick={() => envoyerMessage(suggestion)}>
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        )}
         <form className="chat-form" onSubmit={envoyer}>
           <input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Ecrivez votre message..." />
           <button className="btn-dark" type="submit">

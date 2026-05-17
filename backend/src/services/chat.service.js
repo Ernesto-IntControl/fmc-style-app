@@ -20,6 +20,15 @@ const schemaAssistant = {
       description: "Heure au format HH:mm si elle correspond a 09:00, 11:00, 14:00 ou 16:00.",
     },
     creneauDemande: { type: ["string", "null"], description: "Heure demandee par le client, meme indisponible." },
+    besoinClient: {
+      type: ["string", "null"],
+      description: "Resume court du besoin ou de l'humeur du client : conseil, hesitation, urgence, style souhaite.",
+    },
+    suggestions: {
+      type: "array",
+      items: { type: "string" },
+      description: "Deux ou trois suggestions courtes que l'assistant peut proposer ensuite.",
+    },
     informationsManquantes: {
       type: "array",
       items: { type: "string", enum: ["service", "date", "heure"] },
@@ -37,6 +46,8 @@ const schemaAssistant = {
     "date",
     "heure",
     "creneauDemande",
+    "besoinClient",
+    "suggestions",
     "informationsManquantes",
     "prochaineAction",
     "reponse",
@@ -78,6 +89,17 @@ const identifierServiceLocal = (texte, services) => {
   });
 };
 
+const detecterIntentionLocale = (texte) => {
+  const contenu = texte.toLowerCase();
+  if (/\b(bonjour|bonsoir|salut|hello|coucou|bjr)\b/.test(contenu)) return "salutation";
+  if (/\b(prix|tarif|combien|service|services|proposez|conseil|recommande|choisir|peau|cheveux|ongles)\b/.test(contenu)) {
+    return "information_services";
+  }
+  if (/\b(annuler|supprimer|cancel)\b/.test(contenu)) return "annulation";
+  if (/\b(modifier|changer|deplacer|reporter)\b/.test(contenu)) return "modification";
+  return "reservation";
+};
+
 const construireCatalogue = (services) => {
   return services.map((service) => ({
     id: service.id,
@@ -88,7 +110,14 @@ const construireCatalogue = (services) => {
   }));
 };
 
-const analyserAvecOpenAI = async ({ message, contexte, services }) => {
+const formaterHistorique = (historique = []) => {
+  return historique.map((item) => ({
+    role: item.expediteur === "assistant" ? "assistant" : "user",
+    content: item.contenu,
+  }));
+};
+
+const analyserAvecOpenAI = async ({ message, contexte, historique, services }) => {
   const client = creerClientOpenAI();
   if (!client) return null;
 
@@ -101,12 +130,18 @@ const analyserAvecOpenAI = async ({ message, contexte, services }) => {
       {
         role: "system",
         content:
-          "Tu es Aura, assistante virtuelle du salon FMC Style. Tu aides a reserver des services de beaute. " +
-          "Tu extrais uniquement les informations utiles, en francais, sans inventer de service. " +
+          "Tu es Aura, assistante virtuelle generative du salon FMC Style. Ton style est chaleureux, professionnel, " +
+          "elegant, naturel et concis. Tu sais saluer, rassurer, conseiller et orienter le client avant de reserver. " +
+          "Tu peux poser une question a la fois quand une information manque. " +
+          "Tu extrais aussi les informations utiles, en francais, sans inventer de service. " +
+          "Quand le client demande seulement un conseil ou une information, reponds vraiment a sa question avant de proposer une reservation. " +
+          "Si le client hesite, recommande un service du catalogue en expliquant simplement pourquoi. " +
           "Les seuls creneaux acceptes sont 09:00, 11:00, 14:00 et 16:00. " +
           "Si l'utilisateur donne une heure differente, place-la dans creneauDemande et laisse heure a null. " +
-          "Si la demande est relative, calcule la date avec la date du jour fournie.",
+          "Si la demande est relative, calcule la date avec la date du jour fournie. " +
+          "Ne dis jamais qu'un rendez-vous est definitivement confirme : le serveur verifiera les disponibilites et le paiement.",
       },
+      ...formaterHistorique(historique),
       {
         role: "user",
         content: JSON.stringify({
@@ -134,14 +169,17 @@ const analyserAvecRegles = async ({ message, contexte, services }) => {
   const service = identifierServiceLocal(message, services);
   const date = extraireDate(message);
   const heure = extraireHeure(message);
+  const intention = detecterIntentionLocale(message);
 
   return {
-    intention: "reservation",
+    intention,
     serviceId: service?.id || null,
     serviceNom: service?.nom || null,
     date,
     heure,
     creneauDemande: heure,
+    besoinClient: null,
+    suggestions: services.slice(0, 3).map((item) => item.nom),
     informationsManquantes: [],
     prochaineAction: "repondre_info",
     reponse: "",
@@ -160,6 +198,8 @@ const normaliserAnalyse = ({ analyse, message, contexte, services }) => {
     serviceNom: service?.nom || analyse.serviceNom || null,
     date: analyse.date || extraireDate(message) || contexte.date || null,
     heure: CRENEAUX_FIXES.includes(analyse.heure) ? analyse.heure : extraireHeure(message) || contexte.heure || null,
+    besoinClient: analyse.besoinClient || contexte.besoinClient || null,
+    suggestions: analyse.suggestions || [],
   };
 };
 
@@ -168,7 +208,49 @@ const finaliserReponseMetier = async ({ analyse }) => {
     serviceId: analyse.serviceId,
     date: analyse.date,
     heure: analyse.heure,
+    besoinClient: analyse.besoinClient || null,
+    derniereIntention: analyse.intention,
   };
+
+  if (analyse.intention === "salutation" && !contexte.serviceId) {
+    return {
+      reponse:
+        analyse.reponse ||
+        "Bonjour, je suis Aura, votre conciergerie FMC Style. Je peux vous conseiller un soin, presenter nos tarifs ou vous aider a prendre rendez-vous. Qu'est-ce qui vous ferait plaisir aujourd'hui ?",
+      contexte,
+      donneesStructurees: { ...analyse, prochaineAction: "repondre_info", informationsManquantes: [] },
+    };
+  }
+
+  if (analyse.intention === "hors_sujet") {
+    return {
+      reponse:
+        analyse.reponse ||
+        "Je suis surtout la pour vous accompagner sur les soins FMC Style : services, conseils beaute, disponibilites et rendez-vous. Souhaitez-vous que je vous aide a choisir un rituel ?",
+      contexte,
+      donneesStructurees: { ...analyse, prochaineAction: "repondre_info", informationsManquantes: [] },
+    };
+  }
+
+  if (analyse.intention === "modification" || analyse.intention === "annulation") {
+    return {
+      reponse:
+        analyse.reponse ||
+        "Bien sur. Pour modifier ou annuler un rendez-vous, ouvrez votre espace client afin de retrouver la reservation concernee. Je peux aussi vous aider a choisir un nouveau creneau.",
+      contexte,
+      donneesStructurees: { ...analyse, prochaineAction: "repondre_info", informationsManquantes: [] },
+    };
+  }
+
+  if (analyse.intention === "information_services" && !contexte.date && !contexte.heure) {
+    return {
+      reponse:
+        analyse.reponse ||
+        "Nous proposons notamment les tresses signature, le soin du visage eclat et la manucure spa. Si vous me dites l'occasion, votre style ou le temps disponible, je peux vous orienter vers le soin le plus adapte.",
+      contexte,
+      donneesStructurees: { ...analyse, prochaineAction: "repondre_info", informationsManquantes: [] },
+    };
+  }
 
   if (!contexte.serviceId) {
     return {
@@ -220,13 +302,13 @@ const finaliserReponseMetier = async ({ analyse }) => {
   };
 };
 
-const repondreAssistant = async ({ message, contexte = {} }) => {
+const repondreAssistant = async ({ message, contexte = {}, historique = [] }) => {
   const services = await Service.findAll({ where: { estActif: true } });
   let analyse = null;
   let source = "openai";
 
   try {
-    analyse = await analyserAvecOpenAI({ message, contexte, services });
+    analyse = await analyserAvecOpenAI({ message, contexte, historique, services });
   } catch (erreur) {
     console.error("OpenAI indisponible, fallback regles :", erreur.message);
   }
