@@ -11,7 +11,13 @@ function Login({ setPage, setUtilisateur }) {
     try {
       const utilisateur = await login(form);
       setUtilisateur(utilisateur);
-      setPage(utilisateur.role === "admin" ? "admin" : utilisateur.role === "employe" ? "employee" : "client");
+      setPage(
+        utilisateur.role === "admin"
+          ? "admin"
+          : utilisateur.role === "employee" || utilisateur.role === "employe"
+            ? "employee"
+            : "client"
+      );
     } catch (error) {
       setErreur(error.message);
     }

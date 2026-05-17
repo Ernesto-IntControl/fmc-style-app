@@ -1,15 +1,16 @@
 import { useState } from "react";
 import { sendChatMessage } from "../services/appointmentService";
 
-function ChatAssistant({ setPage }) {
+function ChatAssistant({ setPage, utilisateur }) {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([
-    { role: "assistant", texte: "Bonjour, je suis votre conciergerie FMC Style. Comment puis-je vous sublimer aujourd'hui ?" },
+    { role: "assistant", texte: "Bonjour, je suis la conciergerie FMC Style. Comment puis-je vous accompagner aujourd'hui ?" },
   ]);
   const [suggestions, setSuggestions] = useState([
-    "Bonjour, quels services proposez-vous ?",
-    "Je ne sais pas quel soin choisir",
-    "Je veux faire des tresses demain",
+    "Tresses",
+    "Maquillage",
+    "Manucure",
+    "Soins visage",
   ]);
   const [chargement, setChargement] = useState(false);
 
@@ -39,21 +40,21 @@ function ChatAssistant({ setPage }) {
 
   return (
     <section className="chat-page">
-      <div>
-        <p className="eyebrow">Experience personnalisee</p>
-        <h1>Votre assistante de beaute</h1>
+      <div className="chat-intro">
+        <p className="eyebrow">{utilisateur ? "Reservation personnalisee" : "Conciergerie virtuelle"}</p>
+        <h1>{utilisateur ? "Assistant virtuel" : "Votre experience personnalisee"}</h1>
         <p>
-          Demandez simplement : "Je veux faire des tresses demain a 09h". L'assistant identifie le service, la date et
-          les informations manquantes.
+          Demandez un conseil, indiquez un service ou formulez une demande naturelle. La conciergerie vous guide vers le
+          bon soin et le bon creneau.
         </p>
-        <button className="btn-primary" onClick={() => setPage("booking")}>
+        <button className="btn-primary" type="button" onClick={() => setPage(utilisateur ? "booking" : "login")}>
           Continuer vers la reservation
         </button>
       </div>
       <div className="chat-shell">
         <div className="chat-header">
           <p className="eyebrow">Conciergerie virtuelle</p>
-          <h2>Aura</h2>
+          <h2>FMC Concierge</h2>
         </div>
         <div className="messages">
           {messages.map((item, index) => (
@@ -61,7 +62,7 @@ function ChatAssistant({ setPage }) {
               {item.texte}
             </div>
           ))}
-          {chargement && <div className="message">Aura prepare sa reponse...</div>}
+          {chargement && <div className="message">La conciergerie prepare sa reponse...</div>}
         </div>
         {suggestions.length > 0 && (
           <div className="chat-suggestions">

@@ -20,7 +20,7 @@ function Booking({ reservation, setReservation, setPage }) {
   useEffect(() => {
     getServices().then((liste) => {
       setServices(liste);
-      if (!serviceId && liste[0]) setServiceId(liste[0].id);
+      setServiceId((actuel) => actuel || liste[0]?.id || "");
     });
   }, []);
 
@@ -52,14 +52,21 @@ function Booking({ reservation, setReservation, setPage }) {
   };
 
   return (
-    <>
-      <section className="page-hero">
-        <p className="eyebrow">Etape 02 - date et heure</p>
-        <h1>Choisissez votre moment</h1>
-        <p>Le systeme trouve automatiquement un employe competent et disponible.</p>
+    <div className="booking-page">
+      <div className="booking-stepper" aria-label="Progression de reservation">
+        <span className="active">01 Service</span>
+        <span className="active">02 Heure</span>
+        <span>03 Inspiration</span>
+        <span>04 Paiement</span>
+        <span>05 Confirmation</span>
+      </div>
+      <section className="client-heading compact booking-heading">
+        <p className="eyebrow">Nouveau rendez-vous</p>
+        <h1>Choisissez votre moment de serenite</h1>
+        <p>Le systeme trouve automatiquement un employe competent et disponible pour le service choisi.</p>
       </section>
       <form className="booking-layout" onSubmit={soumettre}>
-        <div className="form-panel">
+        <div className="form-panel booking-form-panel">
           {erreur && <p className="error">{erreur}</p>}
           <div className="form">
             <div className="field">
@@ -96,6 +103,15 @@ function Booking({ reservation, setReservation, setPage }) {
               <label>Note ou commentaire</label>
               <textarea rows="5" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Style souhaite, allergies, preferences..." />
             </div>
+            <div className="inspiration-mini">
+              <div>
+                <strong>Photos d'inspiration</strong>
+                <p>Ajoutez vos references depuis la page Mes inspirations avant le rendez-vous.</p>
+              </div>
+              <button type="button" onClick={() => setPage("client-inspirations")}>
+                Gerer
+              </button>
+            </div>
             <button className="btn-primary" type="submit" disabled={!heure}>
               Continuer vers le paiement
             </button>
@@ -122,7 +138,7 @@ function Booking({ reservation, setReservation, setPage }) {
           </div>
         </aside>
       </form>
-    </>
+    </div>
   );
 }
 

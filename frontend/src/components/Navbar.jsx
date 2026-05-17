@@ -1,41 +1,56 @@
+import { useState } from "react";
+
 const navItems = [
-  { id: "home", label: "Accueil" },
   { id: "services", label: "Services" },
+  { id: "promotions", label: "Promotions" },
+  { id: "blog", label: "Blog & Conseils" },
+  { id: "about", label: "A propos" },
   { id: "chat", label: "Conciergerie" },
 ];
 
 function Navbar({ page, setPage, utilisateur, deconnecter }) {
-  const espace = utilisateur?.role === "admin" ? "admin" : utilisateur?.role === "employe" ? "employee" : "client";
+  const [ouvert, setOuvert] = useState(false);
+  const espace =
+    utilisateur?.role === "admin" ? "admin" : utilisateur?.role === "employee" || utilisateur?.role === "employe" ? "employee" : "client";
+  const aller = (destination) => {
+    setPage(destination);
+    setOuvert(false);
+  };
 
   return (
     <header className="navbar">
-      <button className="brand" onClick={() => setPage("home")}>
+      <button className="brand" onClick={() => aller("home")}>
         FMC STYLE
       </button>
 
-      <nav className="nav-links">
+      <button className="nav-toggle" onClick={() => setOuvert((valeur) => !valeur)} aria-label="Ouvrir le menu">
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav className={`nav-links ${ouvert ? "open" : ""}`}>
         {navItems.map((item) => (
-          <button key={item.id} className={page === item.id ? "active" : ""} onClick={() => setPage(item.id)}>
+          <button key={item.id} className={page === item.id ? "active" : ""} onClick={() => aller(item.id)}>
             {item.label}
           </button>
         ))}
         {utilisateur && (
-          <button className={page === espace ? "active" : ""} onClick={() => setPage(espace)}>
+          <button className={page === espace ? "active" : ""} onClick={() => aller(espace)}>
             Tableau de bord
           </button>
         )}
       </nav>
 
-      <div className="nav-actions">
+      <div className={`nav-actions ${ouvert ? "open" : ""}`}>
         {utilisateur ? (
           <>
-            <button onClick={() => setPage(espace)}>{utilisateur.nom}</button>
+            <button onClick={() => aller(espace)}>{utilisateur.nom}</button>
             <button onClick={deconnecter}>Deconnexion</button>
           </>
         ) : (
-          <button onClick={() => setPage("login")}>Connexion</button>
+          <button onClick={() => aller("login")}>Connexion</button>
         )}
-        <button className="btn-primary" onClick={() => setPage(utilisateur ? "booking" : "login")}>
+        <button className="btn-primary nav-reserve" onClick={() => aller(utilisateur ? "booking" : "login")}>
           Reserver
         </button>
       </div>

@@ -11,8 +11,8 @@ function Home({ setPage, utilisateur }) {
     <div className="home-page">
       <section className="hero-home">
         <div className="hero-copy">
-          <p className="eyebrow">FMC Style Salon</p>
-          <h1>L'excellence de la beaute, guidee par Aura.</h1>
+          <p className="eyebrow">FMC STYLE</p>
+          <h1>L'excellence de la beaute, guidee par votre conciergerie.</h1>
           <p>
             Un sanctuaire moderne pour choisir un soin, discuter avec une conciergerie virtuelle et reserver un
             rendez-vous en quelques instants.
@@ -41,8 +41,8 @@ function Home({ setPage, utilisateur }) {
           <p className="eyebrow">L'essence FMC Style</p>
           <h2>Un parcours clair, elegant et pense pour reserver sans friction.</h2>
           <p>
-            La page d'accueil installe immediatement le salon, puis oriente le visiteur vers les services ou vers Aura,
-            l'assistante virtuelle capable de conseiller, comprendre une intention et proposer un creneau.
+            La page d'accueil installe immediatement le salon, puis oriente le visiteur vers les services ou vers la
+            conciergerie virtuelle capable de conseiller, comprendre une intention et proposer un creneau.
           </p>
           <button className="text-link" onClick={() => setPage("services")}>
             Decouvrir les services
@@ -110,25 +110,25 @@ function Home({ setPage, utilisateur }) {
           <p className="eyebrow">Conciergerie virtuelle</p>
           <h2>Votre assistant personnel, disponible avant la reservation.</h2>
           <p>
-            Aura peut saluer, conseiller un service, comprendre une demande naturelle, identifier les informations
+            L'assistant peut saluer, conseiller un service, comprendre une demande naturelle, identifier les informations
             manquantes et orienter le client vers le bon creneau.
           </p>
           <button className="btn-primary" onClick={ouvrirAssistant}>
             Demarrer la conversation
           </button>
         </div>
-        <div className="concierge-chat" aria-label="Apercu du chat Aura">
+        <div className="concierge-chat" aria-label="Apercu du chat FMC Concierge">
           <div className="chat-avatar">
             <span>A</span>
             <div>
-              <strong>Aura Concierge</strong>
+              <strong>FMC Concierge</strong>
               <small>En ligne</small>
             </div>
           </div>
           <p>Bonjour, quel rituel souhaitez-vous decouvrir aujourd'hui ?</p>
           <p className="is-user">Je veux avoir bonne mine mais je ne sais pas quel soin choisir.</p>
           <p>Je vous conseille le soin du visage eclat. Souhaitez-vous voir les creneaux disponibles ?</p>
-          <button onClick={ouvrirAssistant}>Ouvrir Aura</button>
+          <button onClick={ouvrirAssistant}>Ouvrir la conciergerie</button>
         </div>
       </section>
 

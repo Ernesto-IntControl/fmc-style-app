@@ -1,16 +1,16 @@
 :root {
-  --noir: #20201f;
-  --texte: #5f5a52;
-  --muted: #8d8679;
-  --fond: #f8f7f5;
+  --noir: #1e1e1e;
+  --texte: #666666;
+  --muted: #777777;
+  --fond: #f5f3ef;
   --blanc: #ffffff;
-  --beige: #eee7da;
+  --beige: #f0ebe2;
   --rose: #c9a49b;
-  --or: #927100;
-  --or-clair: #d8b62c;
-  --ligne: #d8cdbb;
-  --display: "Bodoni 72", "Bodoni MT", Didot, "Playfair Display", Georgia, serif;
-  --sans: "Aptos", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --or: #9a7800;
+  --or-clair: #c8a44d;
+  --ligne: #ddd6c8;
+  --display: "Cormorant Garamond", "Bodoni 72", "Bodoni MT", Didot, Georgia, serif;
+  --sans: "Inter", "Manrope", "Helvetica Neue", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
   font-family: var(--sans);
   color: var(--texte);
   background: var(--fond);

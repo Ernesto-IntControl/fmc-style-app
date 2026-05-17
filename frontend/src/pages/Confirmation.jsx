@@ -1,32 +1,54 @@
-function Confirmation({ reservation, setPage }) {
+import reception from "../assets/reception.png";
+
+function Confirmation({ reservation, setPage, utilisateur }) {
   return (
-    <section className="page-hero">
-      <p className="eyebrow">Confirmation</p>
-      <h1>Votre rendez-vous est confirme</h1>
-      <p>
-        Paiement simule effectue. L'admin et l'employe peuvent maintenant voir le rendez-vous dans leurs espaces.
-      </p>
-      <div className="actions" style={{ justifyContent: "center" }}>
-        <button className="btn-primary" onClick={() => setPage("client")}>
-          Voir mon espace
-        </button>
-        <button className="btn-secondary" onClick={() => setPage("services")}>
-          Retour aux services
-        </button>
-      </div>
-      {reservation?.rendezVous && (
-        <div className="summary-card" style={{ maxWidth: 620, margin: "40px auto 0", textAlign: "left" }}>
-          <div className="summary-row">
+    <div className="confirmation-page">
+      <section className="confirmation-hero">
+        <div className="success-icon">✓</div>
+        <h1>Rendez-vous confirme !</h1>
+        <p>Un email de confirmation vous a ete envoye. Nous avons hate de vous accueillir chez FMC STYLE.</p>
+      </section>
+
+      <section className="confirmation-card">
+        <img src={reception} alt="Salon FMC Style" />
+        <div>
+          <p className="eyebrow">Service selectionne</p>
+          <h2>{reservation?.service?.nom || "Rituel FMC Style"}</h2>
+          <div className="confirmation-details">
             <span>Date</span>
-            <strong>{reservation.rendezVous.date}</strong>
-          </div>
-          <div className="summary-row">
+            <strong>{reservation?.rendezVous?.date || "A confirmer"}</strong>
             <span>Heure</span>
-            <strong>{reservation.rendezVous.heure}</strong>
+            <strong>{reservation?.rendezVous?.heure || "--:--"}</strong>
+            <span>Statut</span>
+            <strong>Confirme</strong>
+          </div>
+          <div className="confirmation-actions">
+            {utilisateur && (
+              <button className="btn-light" type="button" onClick={() => setPage("client-appointments")}>
+                Voir mes rendez-vous
+              </button>
+            )}
+            <button className="btn-primary" type="button" onClick={() => setPage("home")}>
+              Retour a l'accueil
+            </button>
           </div>
         </div>
-      )}
-    </section>
+      </section>
+
+      <section className="location-card">
+        <div>
+          <p className="eyebrow">Notre emplacement</p>
+          <h2>Notre sanctuaire</h2>
+          <p>
+            Situe au coeur de la ville, FMC STYLE est un espace calme et confidentiel. Pour garantir la qualite de votre
+            accueil, veuillez vous presenter dix minutes avant le debut du soin.
+          </p>
+        </div>
+        <div className="map-placeholder">
+          <span>FMC STYLE</span>
+        </div>
+      </section>
+    </div>
   );
 }
 

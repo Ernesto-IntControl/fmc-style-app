@@ -30,14 +30,19 @@ function Payment({ reservation, setReservation, setPage }) {
   }
 
   return (
-    <>
-      <section className="page-hero">
+    <div className="payment-page">
+      <section className="payment-heading">
         <p className="eyebrow">Paiement securise</p>
         <h1>Finalisez votre reservation</h1>
+        <p>Confirmez le paiement simule pour valider le rendez-vous dans les espaces admin et employe.</p>
       </section>
       <section className="payment-layout">
-        <div className="form-panel">
+        <div className="form-panel payment-form-panel">
           {erreur && <p className="error">{erreur}</p>}
+          <div className="payment-methods">
+            <button type="button">Apple Pay</button>
+            <button type="button">Google Pay</button>
+          </div>
           <div className="form">
             <div className="field">
               <label>Nom sur la carte</label>
@@ -46,6 +51,16 @@ function Payment({ reservation, setReservation, setPage }) {
             <div className="field">
               <label>Numero de carte</label>
               <input defaultValue="0000 0000 0000 0000" />
+            </div>
+            <div className="payment-fields">
+              <div className="field">
+                <label>Date d'expiration</label>
+                <input defaultValue="MM / AA" />
+              </div>
+              <div className="field">
+                <label>CVC</label>
+                <input defaultValue="123" />
+              </div>
             </div>
             <button className="btn-primary" onClick={payer} type="button">
               Confirmer le paiement
@@ -69,7 +84,7 @@ function Payment({ reservation, setReservation, setPage }) {
           </div>
         </aside>
       </section>
-    </>
+    </div>
   );
 }
 
