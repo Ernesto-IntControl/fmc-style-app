@@ -1,63 +1,170 @@
-import { useEffect, useState } from "react";
-import AppointmentCard from "../components/AppointmentCard";
-import { api } from "../services/api";
-import { getAllAppointments } from "../services/appointmentService";
+import { useEffect, useMemo, useState } from "react";
+import { getAdminData, updateAppointmentStatus } from "../services/adminService";
+import { dateAujourdhui, extraireClients, formatPrix, nomClient, nomEmploye, statutRdv } from "./adminUtils";
 
 function AdminDashboard({ utilisateur, setPage }) {
-  const [rendezVous, setRendezVous] = useState([]);
-  const [services, setServices] = useState([]);
-  const [employes, setEmployes] = useState([]);
+  const [donnees, setDonnees] = useState({
+    rendezVous: [],
+    services: [],
+    employes: [],
+    promotions: [],
+    paiements: [],
+  });
   const [erreur, setErreur] = useState("");
 
+  const charger = () => {
+    getAdminData().then(setDonnees).catch((error) => setErreur(error.message));
+  };
+
   useEffect(() => {
-    Promise.all([getAllAppointments(), api.get("/services"), api.get("/employees")])
-      .then(([rdv, listeServices, listeEmployes]) => {
-        setRendezVous(rdv);
-        setServices(listeServices);
-        setEmployes(listeEmployes);
-      })
-      .catch((error) => setErreur(error.message));
+    charger();
   }, []);
 
+  const stats = useMemo(() => {
+    const jour = dateAujourdhui();
+    const rdvJour = donnees.rendezVous.filter((rdv) => rdv.date === jour);
+    const revenus = donnees.paiements
+      .filter((paiement) => paiement.statut === "complete")
+      .reduce((total, paiement) => total + Number(paiement.montantFinal || paiement.montant || 0), 0);
+    const clients = extraireClients(donnees.rendezVous);
+    const confirmes = donnees.rendezVous.filter((rdv) => rdv.statut === "confirme" || rdv.statut === "termine").length;
+    const taux = donnees.rendezVous.length ? Math.round((confirmes / donnees.rendezVous.length) * 100) : 0;
+    const promotionsActives = donnees.promotions.filter((promotion) => promotion.estActive).length;
+    return { rdvJour: rdvJour.length, revenus, clients: clients.length, taux, promotionsActives };
+  }, [donnees]);
+
+  const changerStatut = async (id, statut) => {
+    await updateAppointmentStatus(id, { statut });
+    charger();
+  };
+
+  const prochains = donnees.rendezVous.slice(0, 4);
+  const enAttente = donnees.rendezVous.filter((rdv) => rdv.statut === "en_attente").slice(0, 3);
+  const paiementsRecents = donnees.paiements.slice(0, 3);
+
   return (
-    <section className="dashboard-layout">
-      <aside className="sidebar">
-        <h2>FMC STYLE ADMIN</h2>
-        <button>Vue d'ensemble</button>
-        <button>Services</button>
-        <button>Employes</button>
-        <button>Promotions</button>
-        <button onClick={() => setPage("booking")}>Nouveau RDV</button>
-      </aside>
-      <div className="dashboard-main">
-        <div className="dashboard-title">
-          <p className="eyebrow">Gestionnaire de salon</p>
-          <h1>Bonjour, {utilisateur?.nom}</h1>
-          <p>Voici ce qui se passe au salon aujourd'hui.</p>
-        </div>
-        {erreur && <p className="error">{erreur}</p>}
-        <div className="stats">
-          <div className="dashboard-card">
-            Rendez-vous
-            <strong>{rendezVous.length}</strong>
+    <div className="admin-page">
+      <header className="admin-page-heading">
+        <p className="eyebrow">Gestionnaire de salon</p>
+        <h1>Bonjour, {utilisateur?.nom || "administrateur"}</h1>
+        <p>Vue d'ensemble des reservations, revenus, equipes et alertes operationnelles du salon.</p>
+      </header>
+
+      {erreur && <p className="error">{erreur}</p>}
+
+      <section className="admin-kpi-grid">
+        <article className="admin-card kpi-card">
+          <span>Rendez-vous du jour</span>
+          <strong>{stats.rdvJour}</strong>
+        </article>
+        <article className="admin-card kpi-card">
+          <span>Revenus semaine</span>
+          <strong>{formatPrix(stats.revenus)}</strong>
+        </article>
+        <article className="admin-card kpi-card">
+          <span>Nouveaux clients</span>
+          <strong>{stats.clients}</strong>
+        </article>
+        <article className="admin-card kpi-card">
+          <span>Taux reservation</span>
+          <strong>{stats.taux}%</strong>
+        </article>
+        <article className="admin-card kpi-card">
+          <span>Promotions actives</span>
+          <strong>{stats.promotionsActives}</strong>
+        </article>
+      </section>
+
+      <section className="admin-dashboard-grid">
+        <article className="admin-card admin-panel-main">
+          <div className="admin-section-title">
+            <h2>Planning a venir</h2>
+            <button type="button" onClick={() => setPage("admin-planning")}>
+              Voir le planning
+            </button>
           </div>
-          <div className="dashboard-card">
-            Services
-            <strong>{services.length}</strong>
+          <div className="admin-timeline">
+            {prochains.map((rdv) => (
+              <div className="admin-timeline-row" key={rdv.id}>
+                <div>
+                  <strong>{rdv.heure}</strong>
+                  <span>{rdv.date}</span>
+                </div>
+                <div>
+                  <h3>{rdv.service?.nom || "Service"}</h3>
+                  <p>
+                    Client : {nomClient(rdv)} - Employe : {nomEmploye(rdv)}
+                  </p>
+                </div>
+                <span className={`admin-status ${rdv.statut}`}>{statutRdv[rdv.statut] || rdv.statut}</span>
+              </div>
+            ))}
           </div>
-          <div className="dashboard-card">
-            Employes
-            <strong>{employes.length}</strong>
+        </article>
+
+        <aside className="admin-card">
+          <div className="admin-section-title">
+            <h2>Activite recente</h2>
           </div>
-        </div>
-        <h2>Planning global</h2>
-        <div className="list">
-          {rendezVous.map((rdv) => (
-            <AppointmentCard key={rdv.id} rendezVous={rdv} />
-          ))}
-        </div>
-      </div>
-    </section>
+          <div className="admin-activity-list">
+            {paiementsRecents.map((paiement) => (
+              <div key={paiement.id}>
+                <span>Paiement recu</span>
+                <strong>{formatPrix(paiement.montantFinal)}</strong>
+                <small>{paiement.rendezVous?.client?.nom || "Client FMC STYLE"}</small>
+              </div>
+            ))}
+            <div>
+              <span>Services actifs</span>
+              <strong>{donnees.services.filter((service) => service.estActif).length}</strong>
+              <small>Catalogue disponible en ligne</small>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section className="admin-dashboard-grid lower">
+        <article className="admin-card">
+          <div className="admin-section-title">
+            <h2>Rendez-vous en attente</h2>
+            <button type="button" onClick={() => setPage("admin-appointments")}>
+              Traiter
+            </button>
+          </div>
+          <div className="pending-grid">
+            {enAttente.map((rdv) => (
+              <article key={rdv.id}>
+                <span>
+                  {rdv.date} - {rdv.heure}
+                </span>
+                <h3>{rdv.service?.nom || "Service FMC STYLE"}</h3>
+                <p>{nomClient(rdv)}</p>
+                <div>
+                  <button type="button" onClick={() => changerStatut(rdv.id, "confirme")}>
+                    Accepter
+                  </button>
+                  <button type="button" onClick={() => changerStatut(rdv.id, "annule")}>
+                    Refuser
+                  </button>
+                </div>
+              </article>
+            ))}
+            {!enAttente.length && <p>Aucun rendez-vous en attente pour le moment.</p>}
+          </div>
+        </article>
+
+        <aside className="admin-card alert-card">
+          <div className="admin-section-title">
+            <h2>Alertes systeme</h2>
+          </div>
+          <ul>
+            <li>Verifier les inspirations envoyees avant les soins complexes.</li>
+            <li>{donnees.employes.filter((employe) => !employe.estActif).length} employe(s) marque(s) inactif(s).</li>
+            <li>{donnees.promotions.filter((promotion) => promotion.estActive).length} campagne(s) a surveiller.</li>
+          </ul>
+        </aside>
+      </section>
+    </div>
   );
 }
 
